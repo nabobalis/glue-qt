@@ -378,7 +378,8 @@ class GlueApplication(Application, QtWidgets.QMainWindow):
 
         self._data_toolbar = QtWidgets.QToolBar("Session and Data toolbar")
 
-        self._data_toolbar.setIconSize(QtCore.QSize(16, 16))
+        icon_size = min(self.style().pixelMetric(QtWidgets.QStyle.PM_ToolBarIconSize), 24)
+        self._data_toolbar.setIconSize(QtCore.QSize(icon_size, icon_size))
 
         self._button_open_session = QtWidgets.QToolButton()
         self._button_open_session.setText("Open Session")
@@ -442,7 +443,8 @@ class GlueApplication(Application, QtWidgets.QMainWindow):
 
         self._console_toolbar = QtWidgets.QToolBar('Advanced toolbar')
 
-        self._console_toolbar.setIconSize(QtCore.QSize(14, 14))
+        icon_size = min(self.style().pixelMetric(QtWidgets.QStyle.PM_ToolBarIconSize), 24)
+        self._console_toolbar.setIconSize(QtCore.QSize(icon_size, icon_size))
 
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(QtWidgets.QSizePolicy.Expanding,

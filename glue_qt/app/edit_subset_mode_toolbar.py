@@ -29,7 +29,8 @@ class EditSubsetModeToolBar(QtWidgets.QToolBar, HubListener):
 
         self._label_subset_mode = QtWidgets.QLabel("Mode:")
         self.addWidget(self._label_subset_mode)
-        self.setIconSize(QtCore.QSize(16, 16))
+        icon_size = min(self.style().pixelMetric(QtWidgets.QStyle.PM_ToolBarIconSize), 24)
+        self.setIconSize(QtCore.QSize(icon_size, icon_size))
         self._group = QtWidgets.QActionGroup(self)
         self._modes = {}
         self._add_actions()
@@ -69,7 +70,7 @@ class EditSubsetModeToolBar(QtWidgets.QToolBar, HubListener):
         # The block_signals here is to prevent signals from being turned back
         # on inside update_combobox.
         update_combobox(self.subset_combo, labeldata, block_signals=False)
-        self.subset_combo.setIconSize(QtCore.QSize(12, 12))
+        self.subset_combo.setIconSize(self.iconSize())
         for index, subset in enumerate(self._data_collection.subset_groups):
             self.subset_combo.setItemIcon(index, layer_icon(subset))
 
