@@ -454,7 +454,8 @@ class DataCollectionView(QtWidgets.QTreeView, HubListener):
         self.setItemDelegate(LabeledDelegate())
         self.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
 
-        self.setIconSize(QtCore.QSize(16, 16))
+        icon_size = min(self.style().pixelMetric(QtWidgets.QStyle.PM_ToolBarIconSize), 24)
+        self.setIconSize(QtCore.QSize(icon_size, icon_size))
 
     def selected_layers(self):
         idxs = self.selectedIndexes()
