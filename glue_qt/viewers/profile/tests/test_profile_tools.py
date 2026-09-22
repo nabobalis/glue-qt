@@ -9,16 +9,13 @@ from glue_qt.utils import process_events
 from glue.viewers.image.state import AggregateSlice
 
 from glue_qt.viewers.image import ImageViewer
+from glue.viewers.profile.state import ProfileViewerState
 from glue.viewers.profile.tests.test_state import SimpleCoordinates
 from ..data_viewer import ProfileViewer
 
-import pytest
-from glue.viewers.profile.state import ProfileViewerState
-
-requires_wcsaxes = pytest.mark.skipif(
-    not hasattr(ProfileViewerState, 'wcsaxes'),
-    reason='installed glue-core has no WCSAxes profile support')
-
+# With a WCSAxes-capable glue-core, world x coordinates are plotted in pixel
+# space, so positions and ranges picked on the axes are pixel values
+WCSAXES = hasattr(ProfileViewerState, 'wcsaxes')
 
 
 class TestProfileTools(object):
@@ -49,7 +46,6 @@ class TestProfileTools(object):
         self.app.close()
         self.app = None
 
-    @requires_wcsaxes
     def test_navigate_sync_image(self):
 
         self.viewer.add_data(self.data)
@@ -69,18 +65,14 @@ class TestProfileTools(object):
         self.viewer.axes.figure.canvas.button_release_event(x, y, 1)
         assert image_viewer.state.slices == (1, 0, 0)
 
-        # With world coordinates on the x axis, WCSAxes mode means the
-        # profile is still plotted in pixel coordinates
-
         self.viewer.state.x_att = self.data.world_component_ids[0]
 
-        x, y = self.viewer.axes.transData.transform([[5, 4]])[0]
+        x, y = self.viewer.axes.transData.transform([[5 if WCSAXES else 10, 4]])[0]
         self.viewer.axes.figure.canvas.button_press_event(x, y, 1)
         self.viewer.axes.figure.canvas.button_release_event(x, y, 1)
         assert image_viewer.state.slices == (5, 0, 0)
 
     @requires_pyqt
-    @requires_wcsaxes
     def test_fit_polynomial(self):
 
         # TODO: need to deterministically set to polynomial fitter
@@ -120,18 +112,18 @@ class TestProfileTools(object):
         self.profile_tools.ui.button_clear.click()
         assert self.profile_tools.text_log.toPlainText() == ''
 
-        # Next, try with world coordinates on the x axis - with WCSAxes the
-        # profile is still plotted in pixel coordinates (the WCS only formats
-        # the tick labels), so the fit happens in pixel coordinates too
+        # Next, try in world coordinates (which WCSAxes plots in pixel space,
+        # so the fit then happens in pixel coordinates too)
 
         self.viewer.state.x_att = self.data.world_component_ids[0]
 
-        x, y = self.viewer.axes.transData.transform([[0.9, 4]])[0]
+        x_range = (0.9, 15.1) if WCSAXES else (1.9, 30.1)
+        x, y = self.viewer.axes.transData.transform([[x_range[0], 4]])[0]
         self.viewer.axes.figure.canvas.button_press_event(x, y, 1)
-        x, y = self.viewer.axes.transData.transform([[15.1, 4]])[0]
+        x, y = self.viewer.axes.transData.transform([[x_range[1], 4]])[0]
         self.viewer.axes.figure.canvas.motion_notify_event(x, y, 1)
 
-        assert_allclose(self.profile_tools.rng_mode.state.x_range, (0.9, 15.1))
+        assert_allclose(self.profile_tools.rng_mode.state.x_range, x_range)
 
         self.profile_tools.ui.button_fit.click()
         self.profile_tools.wait_for_fit()
@@ -140,10 +132,9 @@ class TestProfileTools(object):
         world_log = self.profile_tools.text_log.toPlainText().splitlines()
         assert world_log[0] == 'd1'
         assert world_log[1] == 'Coefficients:'
-        assert world_log[-2] == '8.000000e+00'
+        assert world_log[-2] == ('8.000000e+00' if WCSAXES else '4.000000e+00')
         assert world_log[-1] == '3.500000e+00'
 
-    @requires_wcsaxes
     def test_collapse(self):
 
         self.viewer.add_data(self.data)
@@ -175,9 +166,8 @@ class TestProfileTools(object):
         assert image_viewer.state.slices[0].center == 0
         assert image_viewer.state.slices[0].function is np.nanmean
 
-        # Next, try with world coordinates on the x axis - with WCSAxes the
-        # profile is still plotted in pixel coordinates (the WCS only formats
-        # the tick labels), so the range is in pixel coordinates too
+        # Next, try in world coordinates (which WCSAxes plots in pixel space,
+        # so the range is then in pixel coordinates too)
 
         self.viewer.state.x_att = self.data.world_component_ids[0]
 
@@ -186,9 +176,10 @@ class TestProfileTools(object):
         self.viewer.layers[0].wait()
         process_events()
 
-        x, y = self.viewer.axes.transData.transform([[0.9, 4]])[0]
+        x_range = (0.9, 15.1) if WCSAXES else (1.9, 30.1)
+        x, y = self.viewer.axes.transData.transform([[x_range[0], 4]])[0]
         self.viewer.axes.figure.canvas.button_press_event(x, y, 1)
-        x, y = self.viewer.axes.transData.transform([[15.1, 4]])[0]
+        x, y = self.viewer.axes.transData.transform([[x_range[1], 4]])[0]
         self.viewer.axes.figure.canvas.motion_notify_event(x, y, 1)
 
         self.profile_tools.ui.button_collapse.click()
