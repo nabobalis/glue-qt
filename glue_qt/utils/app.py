@@ -6,7 +6,8 @@ from glue.config import settings
 from glue._settings_helpers import save_settings
 
 __all__ = ['process_events', 'get_qapp', 'fix_tab_widget_fontsize',
-           'update_global_font_size', 'default_font_size']
+           'update_global_font_size', 'default_font_size',
+           'toolbar_icon_size']
 
 qapp = None
 
@@ -26,6 +27,14 @@ def default_font_size():
     if _default_point_size is not None:
         return _default_point_size
     return QtGui.QFont().pointSize()
+
+
+def toolbar_icon_size(widget):
+    """
+    The platform toolbar icon size, capped at 24 px, as a QSize.
+    """
+    size = min(widget.style().pixelMetric(QtWidgets.QStyle.PM_ToolBarIconSize), 24)
+    return QtCore.QSize(size, size)
 
 
 def _fix_mac_app_name():
