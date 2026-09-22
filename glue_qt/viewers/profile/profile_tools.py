@@ -182,7 +182,7 @@ class ProfileTools(QtWidgets.QWidget):
                 axis_values = data[self.viewer.state.x_att, tuple(axis_view)]
                 axis_values = UnitConverter().to_unit(
                     self.viewer.state.reference_data, self.viewer.state.x_att,
-                    axis_values, getattr(self.viewer.state, 'x_display_unit', None))
+                    axis_values, self.viewer.state.x_display_unit)
             slc = int(np.argmin(np.abs(axis_values - x)))
 
         return axis, slc

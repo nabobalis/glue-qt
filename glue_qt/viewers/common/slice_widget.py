@@ -36,7 +36,7 @@ class MultiSliceWidgetHelper(object):
     def _plot_atts(self):
         # The profile viewer has no y_att, and its x_att can be a world
         # component - the corresponding pixel component is then in x_att_pixel
-        atts = [getattr(self.viewer_state, 'x_att_pixel', None) or self.viewer_state.x_att]
+        atts = [getattr(self.viewer_state, 'x_att_pixel', self.viewer_state.x_att)]
         for name in ('y_att', 'z_att'):
             if hasattr(self.viewer_state, name):
                 atts.append(getattr(self.viewer_state, name))
