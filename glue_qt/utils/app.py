@@ -99,6 +99,11 @@ def get_qapp(icon_path=None):
             font.setPointSize(int(settings.FONT_SIZE))
             qapp.setFont(font)
 
+    elif _default_point_size is None:
+        # A host (e.g. IPython) created the application: its font is the
+        # default, and QFont() would track any override applied later
+        _default_point_size = qapp.font().pointSize()
+
     # Make sure we use high resolution icons for HDPI displays.
     try:
         qapp.setAttribute(QtCore.AA_UseHighDpiPixmaps)
