@@ -4,7 +4,7 @@ from astropy.time import Time
 from astropy.wcs.wcsapi import HighLevelWCSWrapper
 
 from glue.core.coordinates import LegacyCoordinates
-from glue.core.coordinate_helpers import dependent_axes, world_axis
+from glue.core.coordinate_helpers import world_axis
 from glue_qt.viewers.common.data_slice_widget import SliceWidget
 from glue.viewers.image.state import AggregateSlice
 from glue.utils.decorators import avoid_circular
@@ -166,7 +166,11 @@ class MultiSliceWidgetHelper(object):
                                              world_axis=world_axis_index)
                     if times is not None:
                         world, world_unit = times
-                    world_warning = len(dependent_axes(self.data.coords, i)) > 1
+                    # Warn if the world value shown depends on other pixel axes
+                    # (which are held at their center), not if other world axes
+                    # happen to depend on this pixel axis
+                    correlated = self.data.coords.axis_correlation_matrix[world_axis_index]
+                    world_warning = not (correlated[world_axis_index] and correlated.sum() == 1)
                     world_label = self.data.world_component_ids[i].label
                 else:
                     world = None
