@@ -36,7 +36,6 @@ from glue_qt.utils import (pick_class, GlueTabBar, qurl_to_path,
 from glue_qt.app.feedback import submit_bug_report, submit_feedback
 from glue_qt.app.plugin_manager import QtPluginManager
 from glue_qt.app.versions import QVersionsDialog
-from glue_qt.app.terminal import glue_terminal, IPythonTerminalError
 
 from glue_qt.config import qt_fixed_layout_tab, qt_client, startup_action, keyboard_shortcut
 from glue_qt.app.save_data import SaveDataDialog
@@ -47,10 +46,12 @@ DOCS_URL = 'http://www.glueviz.org'
 
 def _fix_ipython_pylab():
 
-    try:
-        from IPython import get_ipython
-    except ImportError:
+    # There is no shell to fix if IPython was never imported (or is blocked),
+    # and importing it here would slow down every launch
+    if sys.modules.get('IPython') is None:
         return
+
+    from IPython import get_ipython
 
     shell = get_ipython()
 
@@ -1150,6 +1151,9 @@ class GlueApplication(Application, QtWidgets.QMainWindow):
 
         if self._terminal is not None:  # already set up
             return
+
+        # This imports IPython, ipykernel and qtconsole, so only do it on first use
+        from glue_qt.app.terminal import glue_terminal, IPythonTerminalError
 
         try:
             widget = glue_terminal(data_collection=self._data,
