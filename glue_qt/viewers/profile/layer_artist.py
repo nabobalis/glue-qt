@@ -1,8 +1,12 @@
 import time
 
+import numpy as np
+
+from glue.core import Data
+from glue.core.subset import Subset, SliceSubsetState
 from glue.viewers.profile.layer_artist import ProfileLayerArtist
 from glue_qt.viewers.matplotlib.compute_worker import ComputeWorker
-from glue.utils import defer_draw
+from glue.utils import defer_draw, view_shape
 
 __all__ = ['QThreadedProfileLayerArtist']
 
@@ -47,7 +51,15 @@ class QThreadedProfileLayerArtist(ProfileLayerArtist):
 
     @defer_draw
     def _calculate_profile(self, reset=False):
-        if self.state.layer is not None and self.state.layer.size > 1e7:
+        layer = self.state.layer
+        size = 0 if layer is None else layer.size
+        if (isinstance(layer, Subset) and isinstance(layer.data, Data) and
+                isinstance(layer.subset_state, SliceSubsetState) and
+                layer.subset_state.reference_data is layer.data):
+            # Data.compute_statistic only reads the slice, so decide based on its size instead
+            size = np.prod(view_shape(layer.data.shape, tuple(layer.subset_state.slices)))
+        # Keep using a busy worker so that an older result can't replace a newer one
+        if size > 1e7 or self.is_computing:
             self._worker.work_queue.put(reset)
         else:
             super(QThreadedProfileLayerArtist, self)._calculate_profile(reset=reset)
