@@ -231,6 +231,7 @@ lint.unfixable = []
 "glue_qt/main.py" = ["S102"]  # Use of `exec` detected
 "glue_qt/tests/test_session_back_compat.py" = ["E721"]  # Use `is` and `is not` for type comparisons
 "glue_qt/utils/colors.py" = ["E402"]  # Module level import not at top of file
+"glue_qt/utils/tests/test_app.py" = ["S603"]  # `subprocess` call: check for execution of untrusted input
 "glue_qt/viewers/matplotlib/legend_editor.py" = ["EXE002"]  # file is executable but no shebang is present
 "glue_qt/viewers/matplotlib/tests/test_data_viewer.py" = ["E714"]  # Test for object identity should be `is not`
 "glue_qt/viewers/table/data_viewer.py" = ["B019"]  # Use of `functools.lru_cache` or `functools.cache` on methods can lead to memory leaks

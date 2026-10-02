@@ -1,6 +1,7 @@
 import numpy as np
 
 from numpy.testing import assert_allclose
+from qtpy import QtGui
 
 from glue.core import Data
 from glue_qt.tests.helpers import requires_pyqt
@@ -40,6 +41,14 @@ class TestProfileTools(object):
         self.viewer = None
         self.app.close()
         self.app = None
+
+    def test_fit_log_font(self):
+        # The fit log should use the platform fixed-width font, including once
+        # the viewer is in the application (where on MacOS X the tab widget
+        # style sheet resets the font of the log document)
+        font = self.profile_tools.ui.text_log.document().defaultFont()
+        fixed = QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
+        assert font.family() == fixed.family()
 
     def test_navigate_sync_image(self):
 
