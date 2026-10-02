@@ -96,6 +96,22 @@ class TestDataCollectionModel(object):
         assert model.data(model.data_index(), Qt.FontRole).bold()
         assert model.data(model.subsets_index(), Qt.FontRole).bold()
 
+    def test_icon_role(self):
+        model = self.make_model(2, 0)
+        dc = model.data_collection
+
+        # Icons are cached by marker and color
+        icon = model.data(model.data_index(0), Qt.DecorationRole)
+        assert model.data(model.data_index(1), Qt.DecorationRole) is icon
+
+        dc[1].style.color = '#ff0000'
+        red = model.data(model.data_index(1), Qt.DecorationRole)
+        assert red is not icon
+
+        # Colors restored from a session can be lists
+        dc[1].style.color = [1, 0, 0]
+        assert model.data(model.data_index(1), Qt.DecorationRole) is red
+
     def test_drag_flags(self):
         model = self.make_model(1, 2)
 

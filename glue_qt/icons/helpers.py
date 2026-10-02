@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from qtpy import QtGui
 
 from matplotlib.colors import Colormap
@@ -32,10 +34,17 @@ def layer_icon(layer):
 
     :rtype: QtGui.QIcon
     """
-    icon = POINT_ICONS.get(layer.style.marker, 'circle_point')
-    bm = QtGui.QBitmap(icon_path(icon))
     color = mpl_to_qt_color(layer.style.color)
-    pm = tint_pixmap(bm, color)
+    return _layer_icon(layer.style.marker, color.rgba())
+
+
+# Keyed on the RGBA integer since a color restored from a session can be an
+# unhashable list
+@lru_cache(maxsize=128)
+def _layer_icon(marker, rgba):
+    icon = POINT_ICONS.get(marker, 'circle_point')
+    bm = QtGui.QBitmap(icon_path(icon))
+    pm = tint_pixmap(bm, QtGui.QColor.fromRgba(rgba))
     return QtGui.QIcon(pm)
 
 
