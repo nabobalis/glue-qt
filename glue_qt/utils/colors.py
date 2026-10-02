@@ -189,6 +189,10 @@ from echo.qt.connect import UserDataWrapper
 
 class QColormapCombo(QtWidgets.QComboBox):
 
+    # Icons shared by all combos, keyed by (id(cmap), width). Each colormap is
+    # kept with its icon so that its id cannot be reused while it is cached.
+    _icons = {}
+
     def __init__(self, *args, **kwargs):
         super(QColormapCombo, self).__init__(*args, **kwargs)
         for label, cmap in config.colormaps:
@@ -208,11 +212,17 @@ class QColormapCombo(QtWidgets.QComboBox):
             self._update_icons()
 
     def _update_icons(self):
-        self.setIconSize(QtCore.QSize(self.width(), 15))
+        width = self.width()
+        self.setIconSize(QtCore.QSize(width, 15))
         for index in range(self.count()):
             cmap = self.itemData(index).data
-            icon = QtGui.QIcon(cmap2pixmap(cmap, size=(self.width(), 15), steps=200))
-            self.setItemIcon(index, icon)
+            key = (id(cmap), width)
+            if key not in self._icons:
+                if len(self._icons) >= 1000:  # forget the oldest icon
+                    del self._icons[next(iter(self._icons))]
+                icon = QtGui.QIcon(cmap2pixmap(cmap, size=(width, 15), steps=200))
+                self._icons[key] = cmap, icon
+            self.setItemIcon(index, self._icons[key][1])
 
     def resizeEvent(self, *args, **kwargs):
         super(QColormapCombo, self).resizeEvent(*args, **kwargs)
