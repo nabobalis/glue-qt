@@ -215,8 +215,8 @@ lint.unfixable = []
 
 # module-import-not-at-top-of-file; superfluous-else-break; unnecessary-list-index-lookup
 "glue_qt/app/application.py" = ["E402", "RET508", "PLR1736"]
-# `assert False`; Assertion always fails, replace with `pytest.fail()`; insecure usage of temp file
-"glue_qt/app/tests/test_application.py" = ["B011", "PT015", "S108"]
+# `assert False`; Assertion always fails, replace with `pytest.fail()`; insecure usage of temp file; `subprocess` call
+"glue_qt/app/tests/test_application.py" = ["B011", "PT015", "S108", "S603"]
 # Calling `readlines()`, `os.path.isdir()`; uses `%`; use `pathlib.Path.iterdir()`
 "doc/redirect.py" = ["FURB129", "G002", "PTH112", "PTH208"]
 

@@ -2,6 +2,7 @@
 
 import os
 import sys
+import subprocess
 
 import pytest
 import numpy as np
@@ -19,7 +20,7 @@ from glue_qt.viewers.histogram import HistogramViewer
 from glue_qt.utils import process_events
 
 
-from ..application import GlueApplication, GlueLogger
+from ..application import GlueApplication, GlueLogger, _fix_ipython_pylab
 
 
 def tab_count(app):
@@ -527,3 +528,28 @@ def test_open_session_terminal(tmpdir):
 
     app.close()
     app2.close()
+
+
+def test_import_does_not_import_terminal():
+
+    # Regression test to make sure that importing the application does not
+    # import the IPython terminal, which is slow to import. We use a subprocess
+    # since other tests may already have imported it.
+
+    code = 'import sys, glue_qt.app; print("ipykernel" in sys.modules or "qtconsole" in sys.modules)'
+    output = subprocess.check_output([sys.executable, '-c', code], text=True)
+    assert output.strip() == 'False'
+
+
+def test_fix_ipython_pylab_does_not_import_ipython(monkeypatch):
+
+    # Regression test to make sure that starting the application does not
+    # import IPython if it has not already been imported, and does not fail
+    # if IPython is blocked
+
+    monkeypatch.delitem(sys.modules, 'IPython', raising=False)
+    _fix_ipython_pylab()
+    assert 'IPython' not in sys.modules
+
+    monkeypatch.setitem(sys.modules, 'IPython', None)
+    _fix_ipython_pylab()
