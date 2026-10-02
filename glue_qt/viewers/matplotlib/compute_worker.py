@@ -1,5 +1,4 @@
 import sys
-import time
 import queue
 
 from glue.utils import queue_to_list
@@ -30,9 +29,12 @@ class ComputeWorker(QThread):
 
         while True:
 
-            time.sleep(1 / 25)
-
-            msgs = queue_to_list(self.work_queue)
+            if self.running:
+                # A job just finished: look for more work without waiting
+                msgs = queue_to_list(self.work_queue)
+            else:
+                # Idle: block until a job arrives rather than polling at 25 Hz
+                msgs = [self.work_queue.get()] + queue_to_list(self.work_queue)
 
             if 'stop' in msgs:
                 return
