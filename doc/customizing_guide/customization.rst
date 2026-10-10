@@ -306,6 +306,18 @@ These default to `False`, so setting e.g.::
 means that the action will appear when a single dataset or subset is selected
 but not when a subset group is selected.
 
+To show the action only for some datasets, subset groups or subsets, pass an
+``applies`` function, which is called with the selected layer if ``single`` is
+`True`, otherwise with the list of selected layers, and returns whether the
+action applies to them::
+
+    @layer_action('Do something', single=True, data=True,
+                  applies=lambda data: data.ndim == 3)
+    ...
+
+means that the action will only appear when a single dataset with three
+dimensions is selected.
+
 The callback function is called with two arguments. If ``single`` is `True`, the
 first argument is the selected layer, otherwise it is the list of selected
 layers. The second argument is the

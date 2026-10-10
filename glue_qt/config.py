@@ -127,26 +127,29 @@ class LayerActionRegistry(Registry):
     * ``data``: if ``single`` is `True` whether to only show the action when selecting a dataset
     * ``subset_group``: if ``single`` is `True` whether to only show the action when selecting a subset group
     * ``subset``: if ``single`` is `True` whether to only show the action when selecting a subset
+    * ``applies``: a function called with the first argument the callback would get, to only show the action
+      where it returns `True` (default: `None`, the action is shown whatever the selected layers)
 
     The callback function is called with two arguments. If ``single`` is
     `True`, the first argument is the selected layer, otherwise it is the list
     of selected layers. The second argument is the
     `~glue.core.data_collection.DataCollection` object.
     """
-    item = namedtuple('LayerAction', 'label tooltip callback icon single data subset_group, subset')
+    item = namedtuple('LayerAction', 'label tooltip callback icon single data subset_group, subset applies',
+                      defaults=(None,))
 
     def __call__(self, label, callback=None, tooltip=None, icon=None, single=False,
-                 data=False, subset_group=False, subset=False):
+                 data=False, subset_group=False, subset=False, applies=None):
 
         # Backward-compatibility
         if callback is not None:
             self.add(self.item(label, tooltip, callback, icon, True,
-                               False, False, True))
+                               False, False, True, applies))
             return True
 
         def adder(func):
             self.add(self.item(label, tooltip, func, icon, single,
-                               data, subset_group, subset))
+                               data, subset_group, subset, applies))
             return func
         return adder
 
