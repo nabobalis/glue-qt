@@ -152,7 +152,7 @@ class FitSettingsWidget(QtWidgets.QDialog):
         self.accepted.connect(self.update_fitter_from_settings)
 
     def update_fitter_from_settings(self):
-        for k, v in self.widgets.items():
-            setattr(self.fitter, k, v.value())
+        for k, item in self.forms.items():
+            setattr(self.fitter, k, item.value)
         if self.constraints is not None:
             self.constraints.update_constraints(self.fitter)
