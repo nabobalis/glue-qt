@@ -1,8 +1,12 @@
+from unittest.mock import patch
+
 import numpy as np
 
 from numpy.testing import assert_allclose
 
 from glue.core import Data
+from glue.core.fitters import PolynomialFitter
+from glue_qt.core.fitters import FitSettingsWidget
 from glue_qt.tests.helpers import requires_pyqt
 from glue_qt.app import GlueApplication
 from glue_qt.utils import process_events
@@ -11,6 +15,38 @@ from glue.viewers.image.state import AggregateSlice
 from glue_qt.viewers.image import ImageViewer
 from glue.viewers.profile.tests.test_state import SimpleCoordinates
 from ..data_viewer import ProfileViewer
+
+
+def set_degree(profile_tools, degree):
+    # Set the polynomial degree in the settings dialog and click OK
+
+    def exec_(dialog):
+        dialog.widgets['degree'].setValue(degree)
+        dialog.accept()
+
+    with patch.object(FitSettingsWidget, 'exec_', exec_):
+        profile_tools.ui.button_settings.click()
+
+
+def fit_coefficients(viewer, profile_tools):
+    # Fit from 0.9 to 15.1 in pixel coordinates and return the coefficients
+
+    viewer.state.x_att = viewer.state.reference_data.pixel_component_ids[0]
+    viewer.layers[0].wait()
+    process_events()
+
+    x, y = viewer.axes.transData.transform([[0.9, 4]])[0]
+    viewer.axes.figure.canvas.button_press_event(x, y, 1)
+    x, y = viewer.axes.transData.transform([[15.1, 4]])[0]
+    viewer.axes.figure.canvas.motion_notify_event(x, y, 1)
+
+    profile_tools.ui.button_fit.click()
+    profile_tools.wait_for_fit()
+    process_events()
+
+    log = profile_tools.text_log.toPlainText().splitlines()
+    assert log[:2] == ['d1', 'Coefficients:']
+    return log[2:]
 
 
 class TestProfileTools(object):
@@ -127,6 +163,42 @@ class TestProfileTools(object):
         assert world_log[1] == 'Coefficients:'
         assert world_log[-2] == '4.000000e+00'
         assert world_log[-1] == '3.500000e+00'
+
+    @requires_pyqt
+    def test_fit_settings(self):
+
+        # Regression test for a bug that caused the fit to use a new fitter
+        # rather than the one changed in the settings dialog
+
+        self.viewer.add_data(self.data)
+        self.profile_tools.ui.tabs.setCurrentIndex(1)
+        self.profile_tools.fit_function = PolynomialFitter
+
+        set_degree(self.profile_tools, 1)
+
+        assert fit_coefficients(self.viewer, self.profile_tools) == ['8.000000e+00', '3.500000e+00']
+
+    @requires_pyqt
+    def test_fit_settings_per_viewer(self):
+
+        # Each profile viewer keeps its own fitter settings
+
+        viewer2 = self.app.new_data_viewer(ProfileViewer)
+        viewer2.state.function = 'mean'
+        viewer2.toolbar.active_tool = 'profile-analysis'
+        profile_tools2 = viewer2.toolbar.tools['profile-analysis']._profile_tools
+
+        for viewer, profile_tools, degree in [(self.viewer, self.profile_tools, 1),
+                                              (viewer2, profile_tools2, 2)]:
+            viewer.add_data(self.data)
+            profile_tools.ui.tabs.setCurrentIndex(1)
+            profile_tools.fit_function = PolynomialFitter
+            set_degree(profile_tools, degree)
+
+        assert len(fit_coefficients(self.viewer, self.profile_tools)) == 2
+        assert len(fit_coefficients(viewer2, profile_tools2)) == 3
+
+        viewer2.close()
 
     def test_collapse(self):
 
