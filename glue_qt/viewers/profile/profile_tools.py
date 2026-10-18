@@ -265,12 +265,13 @@ class ProfileTools(QtWidgets.QWidget):
         self._clear_fit()
 
         for layer in fit_result:
-            # y_model = fitter.predict(fit_result[layer], x)
-            self._fit_artists.append(fitter.plot(fit_result[layer], self.axes, x,
+            # Keep every artist, as a fitter can plot more than one curve,
+            # such as one per model component, and Clear removes them all
+            self._fit_artists.extend(fitter.plot(fit_result[layer], self.axes, x,
                                                  alpha=layer.state.alpha,
                                                  linewidth=layer.state.linewidth * 0.5,
                                                  color=layer.state.color,
-                                                 normalize=normalize.get(layer, None))[0])
+                                                 normalize=normalize.get(layer, None)))
 
         self.canvas.draw_idle()
 
