@@ -176,7 +176,10 @@ class ProfileTools(QtWidgets.QWidget):
         return axis, slc
 
     def _on_settings(self):
-        d = FitSettingsWidget(self.fit_function())
+        fitter = self.fit_function()
+        # A fitter can bring its own settings dialog, such as one to compose
+        # a model, through a settings_widget that takes the fitter
+        d = getattr(fitter, 'settings_widget', FitSettingsWidget)(fitter)
         d.exec_()
 
     def _on_fit(self):

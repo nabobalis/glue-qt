@@ -1,8 +1,12 @@
+from unittest.mock import patch
+
 import numpy as np
 
 from numpy.testing import assert_allclose
 
 from glue.core import Data
+from glue.core.fitters import PolynomialFitter
+from glue_qt.core.fitters import FitSettingsWidget
 from glue_qt.tests.helpers import requires_pyqt
 from glue_qt.app import GlueApplication
 from glue_qt.utils import process_events
@@ -127,6 +131,29 @@ class TestProfileTools(object):
         assert world_log[1] == 'Coefficients:'
         assert world_log[-2] == '4.000000e+00'
         assert world_log[-1] == '3.500000e+00'
+
+    @requires_pyqt
+    def test_fitter_settings_widget(self):
+
+        # A fitter with a settings_widget opens it from the Settings button,
+        # and other fitters open the default settings dialog
+
+        opened = []
+
+        class OwnSettings(FitSettingsWidget):
+            pass
+
+        def exec_(dialog):
+            opened.append((type(dialog), type(dialog.fitter)))
+
+        self.profile_tools.fit_function = PolynomialFitter
+
+        with patch.object(FitSettingsWidget, 'exec_', exec_):
+            self.profile_tools.ui.button_settings.click()
+            with patch.object(PolynomialFitter, 'settings_widget', OwnSettings, create=True):
+                self.profile_tools.ui.button_settings.click()
+
+        assert opened == [(FitSettingsWidget, PolynomialFitter), (OwnSettings, PolynomialFitter)]
 
     def test_collapse(self):
 
