@@ -46,6 +46,9 @@ class MultiSliceWidgetHelper(object):
 
         for s in self._sliders:
             if s is not None:
+                # Hide explicitly: close() alone does not cancel the show that
+                # the layout queued for a slider Qt has not shown yet
+                s.hide()
                 s.close()
 
         self._sliders = []
