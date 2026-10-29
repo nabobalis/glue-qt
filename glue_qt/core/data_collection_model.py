@@ -421,8 +421,14 @@ class DataCollectionModel(QtCore.QAbstractItemModel, HubListener):
         self.new_item.emit(idx)
 
     def invalidate(self, *args):
+        self.layoutAboutToBeChanged.emit()
         self.root = DataCollectionItem(self.data_collection)
         self._items.clear()
+        # The items look up their data collection entry by row, and the
+        # collection has already changed, so old indexes can't be mapped to
+        # new ones: make them invalid, as Qt asks of a layout change
+        old = self.persistentIndexList()
+        self.changePersistentIndexList(old, [QtCore.QModelIndex()] * len(old))
         self.layoutChanged.emit()
 
     def glue_data(self, indices):

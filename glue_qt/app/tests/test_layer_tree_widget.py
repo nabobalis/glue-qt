@@ -2,9 +2,11 @@
 
 from unittest.mock import MagicMock, patch
 
-from qtpy import QtWidgets
+from qtpy import QtCore, QtWidgets
 from glue import core
 from glue.tests import example_data
+from glue.core.hub import HubListener
+from glue.core.message import EditSubsetMessage
 from glue.core.session import Session
 
 from ..layer_tree_widget import LayerTreeWidget, Clipboard, PlotAction
@@ -213,6 +215,33 @@ class TestLayerTree(object):
         assert grps[0] in mode.edit_subset
         assert grps[1] in mode.edit_subset
         assert grps[2] not in mode.edit_subset
+
+    def test_edit_subset_kept_as_other_layers_are_removed(self):
+        # Removing a subset group or dataset rebuilds the tree, which should
+        # leave the edit subset alone unless it is the group removed
+        first, keep, last = [self.collect.new_subset_group() for _ in range(3)]
+        mode = self.session.edit_subset_mode
+        mode.edit_subset = [keep]
+        listener, edits = HubListener(), []
+        self.hub.subscribe(listener, EditSubsetMessage, handler=lambda msg: edits.append(msg.subset))
+        old_index = QtCore.QPersistentModelIndex(self.widget.ui.layerTree.model().to_indices([keep])[0])
+
+        self.collect.remove_subset_group(first)
+        assert mode.edit_subset == [keep]
+        assert self.widget.selected_layers() == [keep]
+        assert [] not in edits  # not even for a moment
+        assert not old_index.isValid()  # the rows moved, so the old index can't be kept
+
+        self.collect.remove(self.data[0])
+        assert mode.edit_subset == [keep]
+
+        self.collect.remove_subset_group(keep)
+        assert mode.edit_subset == []
+
+        # A subset deleted on its own takes its group out of the edit subset
+        mode.edit_subset = [last]
+        last.subsets[0].delete()
+        assert mode.edit_subset == []
 
     def test_selection_updates_on_data_add(self):
         layer = self.add_layer()

@@ -519,6 +519,7 @@ class LayerTreeWidget(QtWidgets.QMainWindow, HubListener):
         self._create_actions()
         self._data_collection = None
         self._hub = None
+        self._kept_edit_subset = None
         self.ui.layerTree.setDragEnabled(True)
         self.setMinimumSize(300, 0)
 
@@ -562,6 +563,26 @@ class LayerTreeWidget(QtWidgets.QMainWindow, HubListener):
         self.ui.layerTree.selection_changed.connect(self._update_edit_subset)
         self._data_collection.hub.subscribe(self, EditSubsetMessage,
                                             handler=self._update_subset_selection)
+        # A tree rebuild (as a dataset or subset group is removed) empties the
+        # selection: keep the edit subset through it
+        model = self.ui.layerTree.model()
+        model.layoutAboutToBeChanged.connect(self._keep_edit_subset)
+        model.layoutChanged.connect(self._restore_edit_subset)
+
+    def _keep_edit_subset(self):
+        self._kept_edit_subset = list(self.session.edit_subset_mode.edit_subset)
+
+    def _restore_edit_subset(self):
+        if self._kept_edit_subset is None:
+            return
+        # A subset deleted on its own leaves its group in the collection, but
+        # the group is then no longer an edit subset, as before
+        groups = self._data_collection.subset_groups
+        self.ui.layerTree.set_selected_layers(
+            [g for g in self._kept_edit_subset if g in groups and
+             all(any(s is t for t in s.data.subsets) for s in g.subsets)])
+        self._kept_edit_subset = None
+        self._update_edit_subset()
 
     @avoid_circular
     def _update_subset_selection(self, message):
@@ -575,6 +596,8 @@ class LayerTreeWidget(QtWidgets.QMainWindow, HubListener):
         """
         Update edit subsets to match current selection
         """
+        if self._kept_edit_subset is not None:
+            return  # the tree is being rebuilt: see _restore_edit_subset
         mode = self.session.edit_subset_mode
         mode.edit_subset = [s for s in self.selected_layers() if isinstance(s, core.SubsetGroup)]
 
