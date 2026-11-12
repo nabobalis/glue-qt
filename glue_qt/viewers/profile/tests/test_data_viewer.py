@@ -554,3 +554,32 @@ def test_unit_conversion_limits():
     assert_allclose(viewer.state.x_max, 3)
     assert_allclose(viewer.state.y_min, 10)
     assert_allclose(viewer.state.y_max, 30)
+
+
+def test_profile_tools_unit_override():
+
+    # The Navigate and Collapse tools find the slice of a position on the
+    # profile, which is plotted in the display unit
+
+    wcs1 = WCS(naxis=1)
+    wcs1.wcs.ctype = ['FREQ']
+    wcs1.wcs.crval = [1]
+    wcs1.wcs.cdelt = [1]
+    wcs1.wcs.crpix = [1]
+    wcs1.wcs.cunit = ['GHz']
+
+    d1 = Data(f1=[1., 2., 3.], label='d1')
+    d1.coords = wcs1
+
+    app = GlueApplication()
+    app.data_collection.append(d1)
+
+    viewer = app.new_data_viewer(ProfileViewer)
+    viewer.add_data(d1)
+
+    tools = viewer.toolbar.tools['profile-analysis']._profile_tools
+
+    viewer.state.x_display_unit = 'MHz'
+    assert tools._get_axis_and_pixel_slice(d1, 3000.0) == (0, 2)
+
+    app.close()

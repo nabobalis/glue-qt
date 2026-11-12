@@ -18,6 +18,7 @@ from glue.viewers.common.tool import Tool
 from glue.viewers.image.state import AggregateSlice
 from glue.core.aggregate import mom1, mom2
 from glue.core import BaseData, Subset
+from glue.core.units import UnitConverter
 from glue_qt.viewers.image import ImageViewer
 from glue.core.link_manager import is_convertible_to_single_pixel_cid
 from echo import SelectionCallbackProperty
@@ -171,6 +172,10 @@ class ProfileTools(QtWidgets.QWidget):
             axis_view = [0] * data.ndim
             axis_view[pix_cid.axis] = slice(None)
             axis_values = data[self.viewer.state.x_att, axis_view]
+            # The profile is plotted in the display unit
+            axis_values = UnitConverter().to_unit(
+                self.viewer.state.reference_data, self.viewer.state.x_att,
+                axis_values, self.viewer.state.x_display_unit)
             slc = int(np.argmin(np.abs(axis_values - x)))
 
         return axis, slc
