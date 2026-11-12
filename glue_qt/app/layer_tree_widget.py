@@ -450,7 +450,7 @@ class UserAction(LayerAction):
 
     def __init__(self, layer_tree_widget, callback=None, label='User Action',
                  tooltip=None, icon=None, single=False, data=False,
-                 subset_group=False, subset=False):
+                 subset_group=False, subset=False, applies=None):
         self._title = label
         self._tooltip = tooltip
         self._icon = icon
@@ -458,10 +458,19 @@ class UserAction(LayerAction):
         self._data = data
         self._subset_group = subset_group
         self._subset = subset
+        self._applies = applies
         self._callback = callback
         super(UserAction, self).__init__(layer_tree_widget)
 
     def _can_trigger(self):
+        if not self._layers_match():
+            return False
+        if self._applies is None:
+            return True
+        layers = self.selected_layers()
+        return bool(self._applies(layers[0] if self._single else layers))
+
+    def _layers_match(self):
         if self._single:
             if self.single_selection():
                 layer = self.selected_layers()[0]

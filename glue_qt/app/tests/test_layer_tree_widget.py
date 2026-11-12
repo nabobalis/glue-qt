@@ -7,7 +7,9 @@ from glue import core
 from glue.tests import example_data
 from glue.core.session import Session
 
-from ..layer_tree_widget import LayerTreeWidget, Clipboard, PlotAction
+from glue_qt.config import LayerActionRegistry
+
+from ..layer_tree_widget import LayerTreeWidget, Clipboard, PlotAction, UserAction
 
 
 class TestLayerTree(object):
@@ -237,3 +239,22 @@ class TestLayerTree(object):
 
         self.select_layers(layer)
         assert pa.isEnabled()
+
+    def test_user_action_applies(self):
+
+        registry = LayerActionRegistry()
+        registry('Single', single=True, data=True, applies=lambda data: data.label == 'b')(MagicMock())
+        registry('Multiple', applies=lambda layers: len(layers) == 2)(MagicMock())
+        registry('Always', single=True, data=True)(MagicMock())
+        single, multiple, always = [UserAction(self.widget, **item._asdict()) for item in registry]
+
+        a, b = self.add_layer(core.Data(label='a')), self.add_layer(core.Data(label='b'))
+
+        self.select_layers(a)
+        assert [action.isVisible() for action in (single, multiple, always)] == [False, False, True]
+
+        self.select_layers(b)
+        assert [action.isVisible() for action in (single, multiple, always)] == [True, False, True]
+
+        self.select_layers(a, b)
+        assert [action.isVisible() for action in (single, multiple, always)] == [False, True, False]
