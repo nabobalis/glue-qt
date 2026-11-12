@@ -212,3 +212,33 @@ class TestProfileTools(object):
         out, err = capsys.readouterr()
         assert out.strip() == ""
         assert err.strip() == ""
+
+    @requires_pyqt
+    def test_fit_plot_artists(self, monkeypatch):
+
+        # Clear removes every artist that a fitter's plot returns, not only
+        # the first, so that a fitter can plot a curve per model component
+
+        def plot(fitter, fit_result, axes, x, **kwargs):
+            return axes.plot(x, x, x, 2 * x)
+
+        monkeypatch.setattr(self.profile_tools.fit_function, 'plot', plot)
+
+        self.viewer.add_data(self.data)
+        self.profile_tools.ui.tabs.setCurrentIndex(1)
+        self.viewer.state.x_att = self.data.pixel_component_ids[0]
+        self.viewer.layers[0].wait()
+        process_events()
+        self.profile_tools.rng_mode.state.x_min = 0.9
+        self.profile_tools.rng_mode.state.x_max = 15.1
+
+        self.profile_tools.ui.button_fit.click()
+        self.profile_tools.wait_for_fit()
+        process_events()
+
+        artists = self.profile_tools._fit_artists[:]
+        assert len(artists) == 2
+        assert all(artist in self.viewer.axes.lines for artist in artists)
+
+        self.profile_tools.ui.button_clear.click()
+        assert not any(artist in self.viewer.axes.lines for artist in artists)

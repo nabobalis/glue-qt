@@ -266,11 +266,11 @@ class ProfileTools(QtWidgets.QWidget):
 
         for layer in fit_result:
             # y_model = fitter.predict(fit_result[layer], x)
-            self._fit_artists.append(fitter.plot(fit_result[layer], self.axes, x,
+            self._fit_artists.extend(fitter.plot(fit_result[layer], self.axes, x,
                                                  alpha=layer.state.alpha,
                                                  linewidth=layer.state.linewidth * 0.5,
                                                  color=layer.state.color,
-                                                 normalize=normalize.get(layer, None))[0])
+                                                 normalize=normalize.get(layer, None)))
 
         self.canvas.draw_idle()
 
