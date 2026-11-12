@@ -1,6 +1,7 @@
 # pylint: disable=I0011,W0613,W0201,W0212,E1101,E1103
 
 import os
+from unittest.mock import PropertyMock, patch
 
 import pytest
 import numpy as np
@@ -22,8 +23,10 @@ from glue.core.tests.test_state import clone
 from glue.core.state import GlueUnSerializer
 from glue.plugins.wcs_autolinking.wcs_autolinking import WCSLink
 from glue.config import settings, unit_converter
+from glue.viewers.profile.layer_artist import ProfileLayerArtist
 
 from ..data_viewer import ProfileViewer
+from ..layer_artist import QThreadedProfileLayerArtist
 
 DATA = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -145,6 +148,42 @@ class TestProfileViewer(object):
 
         assert self.viewer.layers[0].enabled
         assert self.viewer.layers[1].enabled
+
+    def test_large_data_slice_subset(self):
+
+        # The profile of a slice of a large dataset only reads the slice, so it
+        # should be computed straight away, while the profile of the whole
+        # dataset should still be computed in the worker thread.
+
+        large = Data(x=np.zeros((11, 1000, 1000), dtype=np.int8), label='large')
+        self.data_collection.append(large)
+
+        with patch.object(ProfileLayerArtist, '_calculate_profile', autospec=True) as calculate:
+            self.viewer.add_data(large)
+            subset_state = SliceSubsetState(large, [slice(None), slice(1, 2), slice(1, 2)])
+            self.data_collection.new_subset_group(subset_state=subset_state, label='s1')
+
+        computed = [call.args[0].layer for call in calculate.call_args_list]
+        assert large not in computed
+        assert large.subsets[0] in computed
+
+    def test_large_data_slice_subset_worker_busy(self):
+
+        # If the worker thread is still computing the profile of a subset when
+        # the subset changes to a small slice, the new profile should also be
+        # computed in the worker thread, so that the older result can't
+        # replace the newer one.
+
+        large = Data(x=np.zeros((11, 1000, 1000), dtype=np.int8), label='large')
+        self.data_collection.append(large)
+        self.viewer.add_data(large)
+        subset_group = self.data_collection.new_subset_group(subset_state=large.id['x'] > 0, label='s1')
+
+        with patch.object(QThreadedProfileLayerArtist, 'is_computing', new_callable=PropertyMock, return_value=True):
+            with patch.object(ProfileLayerArtist, '_calculate_profile', autospec=True) as calculate:
+                subset_group.subset_state = SliceSubsetState(large, [slice(None), slice(1, 2), slice(1, 2)])
+
+        assert calculate.call_count == 0
 
     def test_clone(self):
 
