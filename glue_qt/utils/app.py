@@ -1,6 +1,6 @@
 import time
 import platform
-from qtpy import QtCore, QtGui, QtWidgets, QtQuick, QT6
+from qtpy import QtCore, QtGui, QtWidgets, QT6
 
 from glue.config import settings
 from glue._settings_helpers import save_settings
@@ -51,6 +51,7 @@ def get_qapp(icon_path=None):
         # WebEngine at the same time as the OpenGL widget, at least on MacOS X.
         # See https://bugreports.qt.io/browse/QTBUG-122886 for more details.
         if QT6:
+            from qtpy import QtQuick
             QtQuick.QQuickWindow.setGraphicsApi(QtQuick.QSGRendererInterface.GraphicsApi.OpenGL)
 
         qapp = QtWidgets.QApplication([''])
