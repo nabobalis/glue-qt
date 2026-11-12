@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
-from glue.core.fitters import SimpleAstropyGaussianFitter, PolynomialFitter
+from glue.core.fitters import BaseFitter1D, SimpleAstropyGaussianFitter, PolynomialFitter
+from glue.core.simpleforms import BoolOption
 
 from ..fitters import ConstraintsWidget, FitSettingsWidget
 
@@ -28,6 +29,10 @@ class TestConstraintsWidget(object):
                                                       limits=None)
 
 
+class BoolOptionFitter(BaseFitter1D):
+    flag = BoolOption(label="Flag")
+
+
 class TestFitSettingsWidget(object):
 
     def test_option(self):
@@ -37,6 +42,13 @@ class TestFitSettingsWidget(object):
         w.widgets['degree'].setValue(5)
         w.update_fitter_from_settings()
         assert f.degree == 5
+
+    def test_bool_option(self):
+        f = BoolOptionFitter()
+        w = FitSettingsWidget(f)
+        w.widgets['flag'].setChecked(True)
+        w.update_fitter_from_settings()
+        assert f.flag is True
 
     def test_set_constraints(self):
         f = SimpleAstropyGaussianFitter()
