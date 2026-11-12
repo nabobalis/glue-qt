@@ -49,6 +49,29 @@ class TestMultiSliceWidgetHelper(object):
         assert wavelength._world_unit == 'm'
         assert_allclose(wavelength._world, 6.3e-7 + 1e-11 * arange(5))
 
+    def test_world_warning_only_for_dependent_world_axis(self):
+        # The pointing drifts along the third pixel axis, so right ascension
+        # depends on all three pixel axes and frequency only on its own
+        wcs = WCS(naxis=3)
+        wcs.wcs.ctype = ['RA---TAN', 'DEC--TAN', 'FREQ']
+        wcs.wcs.pc = [[1, 0, 0.001], [0, 1, 0], [0, 0, 1]]
+        data = Data(x=arange(24).reshape((2, 3, 4)), coords=wcs, label="Cube")
+
+        state = ViewerTestState()
+        state.reference_data = data
+        state.x_att = data.pixel_component_ids[2]
+        state.y_att = data.pixel_component_ids[1]
+        state.slices = (0,) * data.ndim
+
+        # A slider with a warning starts in pixel coordinates. The frequency
+        # shown is the same wherever the other two pixel axes are
+        helper = MultiSliceWidgetHelper(viewer_state=state, layout=QVBoxLayout())
+        assert helper._sliders[0].state.use_world
+
+        # The right ascension shown holds only at the center of the other two
+        state.x_att = data.pixel_component_ids[0]
+        assert not helper._sliders[2].state.use_world
+
     def test_no_slider_if_flat(self):
         x = arange(72).reshape((6, 4, 1, 3))
         data = Data(x=x, label="Flat Cube")

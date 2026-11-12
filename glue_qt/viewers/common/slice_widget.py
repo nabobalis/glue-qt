@@ -1,7 +1,7 @@
 import numpy as np
 
 from glue.core.coordinates import LegacyCoordinates
-from glue.core.coordinate_helpers import dependent_axes, world_axis
+from glue.core.coordinate_helpers import world_axis
 from glue_qt.viewers.common.data_slice_widget import SliceWidget
 from glue.viewers.image.state import AggregateSlice
 from glue.utils.decorators import avoid_circular
@@ -108,7 +108,11 @@ class MultiSliceWidgetHelper(object):
                                        pixel_axis=self.data.ndim - 1 - i,
                                        world_axis=world_axis_index)
                     world_unit = self.data.coords.world_axis_units[world_axis_index]
-                    world_warning = len(dependent_axes(self.data.coords, i)) > 1
+                    # Warn if the world value shown depends on other pixel axes
+                    # (which are held at their center), not if other world axes
+                    # happen to depend on this pixel axis
+                    correlated = self.data.coords.axis_correlation_matrix[world_axis_index]
+                    world_warning = not (correlated[self.data.ndim - 1 - i] and correlated.sum() == 1)
                     world_label = self.data.world_component_ids[i].label
                 else:
                     world = None
