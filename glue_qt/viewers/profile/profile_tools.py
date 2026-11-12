@@ -109,9 +109,8 @@ class ProfileTools(QtWidgets.QWidget):
         self.ui.button_clear.clicked.connect(self._on_clear)
         self.ui.button_collapse.clicked.connect(self._on_collapse)
 
-        font = QtGui.QFont("Courier")
-        font.setStyleHint(QtGui.QFont.Monospace)
-        self.ui.text_log.document().setDefaultFont(font)
+        font = QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
+        self.ui.text_log.setFont(font)
         self.ui.text_log.setLineWrapMode(QtWidgets.QTextEdit.NoWrap)
 
         self.axes = self.viewer.axes
