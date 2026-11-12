@@ -119,6 +119,21 @@ Custom Plotting
 
 Fit plugins can also override the :meth:`~glue.core.fitters.BaseFitter1D.plot` method, to customize how the model fit is drawn on the profile.
 
+Custom settings dialog
+----------------------
+
+A fit plugin whose settings do not fit options and constraints can provide the
+dialog that the Settings button opens, as a ``settings_widget`` class attribute::
+
+    @fit_plugin
+    class MyFitter(BaseFitter1D):
+        settings_widget = MySettingsDialog
+        ...
+
+``settings_widget`` is called with the fitter and returns a dialog, which is
+shown with its ``exec_()`` method. The dialog changes the fitter it was given,
+and the profile viewer then fits with that fitter.
+
 
 Example: Gaussian fitting with Emcee
 ------------------------------------

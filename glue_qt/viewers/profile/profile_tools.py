@@ -185,7 +185,9 @@ class ProfileTools(QtWidgets.QWidget):
         return self._fitters[fitter_cls]
 
     def _on_settings(self):
-        d = FitSettingsWidget(self._get_fitter())
+        fitter = self._get_fitter()
+        # A fitter can provide its own settings dialog as settings_widget
+        d = getattr(fitter, 'settings_widget', FitSettingsWidget)(fitter)
         d.exec_()
 
     def _on_fit(self):

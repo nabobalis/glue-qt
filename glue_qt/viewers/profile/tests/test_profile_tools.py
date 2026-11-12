@@ -200,6 +200,30 @@ class TestProfileTools(object):
 
         viewer2.close()
 
+    def test_fitter_settings_widget(self):
+
+        # A fitter with a settings_widget opens it from the Settings button,
+        # and other fitters open the default settings dialog, both for the
+        # fitter that the fits use
+
+        opened = []
+
+        class OwnSettings(FitSettingsWidget):
+            pass
+
+        def exec_(dialog):
+            opened.append((type(dialog), dialog.fitter))
+
+        self.profile_tools.fit_function = PolynomialFitter
+
+        with patch.object(FitSettingsWidget, 'exec_', exec_):
+            self.profile_tools.ui.button_settings.click()
+            with patch.object(PolynomialFitter, 'settings_widget', OwnSettings, create=True):
+                self.profile_tools.ui.button_settings.click()
+
+        fitter = self.profile_tools._get_fitter()
+        assert opened == [(FitSettingsWidget, fitter), (OwnSettings, fitter)]
+
     def test_collapse(self):
 
         self.viewer.add_data(self.data)
