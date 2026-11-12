@@ -118,6 +118,7 @@ class ProfileTools(QtWidgets.QWidget):
         self.canvas = self.axes.figure.canvas
 
         self._fit_artists = []
+        self._fitters = {}
 
         ProfileTools.fit_function.set_choices(self, list(fit_plugin))
         ProfileTools.fit_function.set_display_func(self, lambda fitter: fitter.label)
@@ -175,8 +176,16 @@ class ProfileTools(QtWidgets.QWidget):
 
         return axis, slc
 
+    def _get_fitter(self):
+        # Keep one fitter per fitter class, so that the options and
+        # constraints set in the settings dialog are used by the fits
+        fitter_cls = self.fit_function
+        if fitter_cls not in self._fitters:
+            self._fitters[fitter_cls] = fitter_cls()
+        return self._fitters[fitter_cls]
+
     def _on_settings(self):
-        d = FitSettingsWidget(self.fit_function())
+        d = FitSettingsWidget(self._get_fitter())
         d.exec_()
 
     def _on_fit(self):
@@ -191,7 +200,7 @@ class ProfileTools(QtWidgets.QWidget):
             return
 
         x_range = self.rng_mode.state.x_range
-        fitter = self.fit_function()
+        fitter = self._get_fitter()
 
         def on_success(result):
             fit_results, x, y = result
