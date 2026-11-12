@@ -1,9 +1,9 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from echo import CallbackProperty
 from qtpy import QtGui
 
-from ..colors import qt_to_mpl_color, QColorBox, connect_color, QColormapCombo
+from ..colors import qt_to_mpl_color, QColorBox, connect_color, QColormapCombo, cmap2pixmap
 
 
 def test_colors():
@@ -52,3 +52,19 @@ def test_connect_color():
 def test_colormap_combo():
 
     combo = QColormapCombo()
+
+
+def test_colormap_combo_icon_cache():
+
+    # A second combo should reuse the images rendered for the first one
+    # rather than render them again, whatever its width.
+
+    combo1 = QColormapCombo()
+
+    with patch('glue_qt.utils.colors.cmap2pixmap', wraps=cmap2pixmap) as render:
+        combo2 = QColormapCombo()
+        combo2.resize(combo1.width() + 10, combo1.height())
+        combo2._update_icons()
+
+    assert render.call_count == 0
+    assert combo2.itemIcon(0).availableSizes() == [combo2.iconSize()]
